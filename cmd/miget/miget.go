@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"github.com/jkl1337/go-mediainfo"
+	"fmt"
 	"log"
 	"os"
-	"fmt"
+
+	"github.com/hairlesshobo/go-mediainfo"
 )
 
 func main() {
