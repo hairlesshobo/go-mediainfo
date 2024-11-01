@@ -119,16 +119,28 @@
 /*-------------------------------------------------------------------------*/
 #if defined(_WIN32) || defined(WIN32)
     #ifdef _UNICODE
-        #define MEDIAINFODLL_NAME L"MediaInfo.dll"
+        #ifndef MEDIAINFODLL_NAME
+            #define MEDIAINFODLL_NAME L"MediaInfo.dll"
+        #endif //MEDIAINFODLL_NAME
     #else //_UNICODE
-        #define MEDIAINFODLL_NAME "MediaInfo.dll"
+        #ifndef MEDIAINFODLL_NAME
+            #define MEDIAINFODLL_NAME "MediaInfo.dll"
+        #endif //MEDIAINFODLL_NAME
     #endif //_UNICODE
 #elif defined(__APPLE__) && defined(__MACH__)
-    #define MEDIAINFODLL_NAME "libmediainfo.0.dylib"
+    #ifndef MEDIAINFODLL_NAME
+        #define MEDIAINFODLL_NAME "libmediainfo.0.dylib"
+    #endif //MEDIAINFODLL_NAME
     #define __stdcall
-    #include <new> //for size_t
+    #ifdef __cplusplus
+        #include <new> //for size_t
+    #else /* __cplusplus */
+        #include <stddef.h> //for size_t
+    #endif /* __cplusplus */
 #else
-    #define MEDIAINFODLL_NAME "libmediainfo.so.0"
+    #ifndef MEDIAINFODLL_NAME
+        #define MEDIAINFODLL_NAME "libmediainfo.so.0"
+    #endif //MEDIAINFODLL_NAME
     #define __stdcall
 #endif //!defined(_WIN32) || defined(WIN32)
 
@@ -349,7 +361,7 @@ extern "C"
 
                 CFStringRef app_path = CFURLCopyFileSystemPath(app_path_url, kCFURLPOSIXPathStyle);
 
-                CFMutableStringRef mut_app_path = CFStringCreateMutableCopy(NULL, NULL, app_path);
+                CFMutableStringRef mut_app_path = CFStringCreateMutableCopy(NULL, 0, app_path);
                 CFStringAppend(mut_app_path, CFSTR("/"));
                 CFStringAppend(mut_app_path, CFSTR(MEDIAINFODLL_NAME));
                 CFStringEncoding encodingMethod = CFStringGetSystemEncoding();
@@ -539,13 +551,13 @@ namespace MediaInfoDLL
 
     const String Unable_Load_DLL = __T("Unable to load ")MEDIAINFODLL_NAME;
 #define MEDIAINFO_TEST_VOID \
-    if (!IsReady()) return
+    if (!MediaInfo_Module) {MediaInfoDLL_Load(); if (!MediaInfo_Module) return;}
 #define MEDIAINFO_TEST_INT \
-    if (!IsReady()) return 0
+    if (!MediaInfo_Module) {MediaInfoDLL_Load(); if (!MediaInfo_Module) return 0;}
 #define MEDIAINFO_TEST_STRING \
-    if (!IsReady()) return Unable_Load_DLL
+    if (!MediaInfo_Module) {MediaInfoDLL_Load(); if (!MediaInfo_Module) return Unable_Load_DLL;}
 #define MEDIAINFO_TEST_STRING_STATIC \
-    if (!MediaInfo_Module) return Unable_Load_DLL
+    if (!MediaInfo_Module) {MediaInfoDLL_Load(); if (!MediaInfo_Module) return Unable_Load_DLL;}
 
     //---------------------------------------------------------------------------
     class MediaInfo
@@ -577,7 +589,7 @@ namespace MediaInfoDLL
         size_t        State_Get() {MEDIAINFO_TEST_INT; return MediaInfo_State_Get(Handle);};
         size_t        Count_Get(stream_t StreamKind, size_t StreamNumber = (size_t) - 1)  {MEDIAINFO_TEST_INT; return MediaInfo_Count_Get(Handle, (MediaInfo_stream_C)StreamKind, StreamNumber);};
 
-        bool IsReady() {return (Handle && MediaInfo_Module) ? true : false;}
+        bool IsReady() {return (Handle!=nullptr && MediaInfo_Module!=nullptr);}
 
     private :
         void* Handle;
